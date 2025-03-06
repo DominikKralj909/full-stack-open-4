@@ -1,6 +1,10 @@
 const { test, describe } = require('node:test')
 const assert = require('node:assert')
 const listHelper = require('../utils/list_helper');
+const supertest = require('supertest');
+const app = require('../app');
+const Blog = require('../models/blog');
+const api = supertest(app);
 
 const blogs = [
 	{
@@ -98,4 +102,63 @@ describe('total likes', () => {
 		const result = listHelper.mostLikes(blogs);
 		assert.deepStrictEqual(result, { author: "Edsger W. Dijkstra", likes: 17 });
 	});
-})
+});
+
+describe('GET /api/blogs', () => {
+	test('should return correct number of blogs in JSON format', async () => {
+		const response = await api.get('/api/blogs');
+		assert.strictEqual(response.status, 200);
+		assert.strictEqual(response.type, 'application/json');
+
+		const blogsCount = response.body.length;
+		assert(blogsCount >= 6);
+  });
+
+	test('unique identifier is named "id"', async () => {
+		const response = await api.get('/api/blogs');
+		const blog = response.body[0];
+		assert(blog.id);
+  	});
+});
+
+describe('POST /api/blogs', () => {
+	test('should create a new blog and increase the blog count', async () => {
+		const newBlog = { title: 'New Blog Post', author: 'Test Author', url: 'http://test.com', likes: 10 };
+
+		const initialResponse = await api.get('/api/blogs');
+		const initialCount = initialResponse.body.length;
+
+		const response = await api.post('/api/blogs').send(newBlog);
+
+		const updatedResponse = await api.get('/api/blogs');
+		const updatedCount = updatedResponse.body.length;
+
+		assert.strictEqual(updatedCount, initialCount + 1);
+		assert.strictEqual(response.status, 201);
+		assert.deepStrictEqual(response.body.title, newBlog.title);
+	});
+
+	test('should default "likes" to 0 if missing', async () => {
+		const newBlog = { title: 'Blog without likes', author: 'Test Author', url: 'http://test.com' };
+
+		const response = await api.post('/api/blogs').send(newBlog);
+		assert.strictEqual(response.status, 201);
+		assert.strictEqual(response.body.likes, 0);
+	});
+
+	test('should return 400 if title is missing', async () => {
+		const newBlog = { author: 'Test Author', url: 'http://test.com', likes: 5 };
+
+		const response = await api.post('/api/blogs').send(newBlog);
+		assert.strictEqual(response.status, 400); 
+		assert.strictEqual(response.body.error, 'Title and URL are required');
+	});
+
+	test('should return 400 if url is missing', async () => {
+		const newBlog = { title: 'Blog without URL', author: 'Test Author', likes: 5 };
+
+		const response = await api.post('/api/blogs').send(newBlog);
+		assert.strictEqual(response.status, 400);
+		assert.strictEqual(response.body.error, 'Title and URL are required');
+	});
+});
