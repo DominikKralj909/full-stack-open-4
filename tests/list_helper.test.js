@@ -162,3 +162,35 @@ describe('POST /api/blogs', () => {
 		assert.strictEqual(response.body.error, 'Title and URL are required');
 	});
 });
+
+describe('DELETE /api/blogs/:id', () => {
+	test('should delete a blog post and return 204', async () => {
+		const newBlog = { title: 'Test Blog to Delete', author: 'Test Author', url: 'http://test.com', likes: 5 };
+		const postResponse = await api.post('/api/blogs').send(newBlog);
+		const blogId = postResponse.body.id;
+
+		const blogsBeforeDelete = await api.get('/api/blogs');
+		const initialBlogCount = blogsBeforeDelete.body.length;
+
+		const deleteResponse = await api.delete(`/api/blogs/${blogId}`);
+		assert.strictEqual(deleteResponse.status, 204);
+
+		const blogsAfterDelete = await api.get('/api/blogs');
+		assert.strictEqual(blogsAfterDelete.body.length, initialBlogCount - 1);
+	});
+});
+
+describe('PUT /api/blogs/:id', () => {
+	test('should update the likes of a blog post', async () => {
+		const newBlog = new Blog({ title: 'Test Blog', author: 'Test Author', url: 'http://test.com', likes: 0 });
+		const savedBlog = await newBlog.save();
+
+		const updatedLikes = 10;
+		const response = await api.put(`/api/blogs/${savedBlog.id}`).send({ likes: updatedLikes }).expect(200);
+
+		assert.strictEqual(response.body.likes, updatedLikes);
+
+		const updatedBlog = await Blog.findById(savedBlog.id);
+		assert.strictEqual(updatedBlog.likes, updatedLikes);
+	});
+});
