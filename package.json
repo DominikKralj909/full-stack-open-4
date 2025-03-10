@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/DominikKralj909/full-stack-open-4#readme",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -26,6 +27,7 @@
     "mongoose": "^8.12.1"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.9",
     "supertest": "^7.0.0"
   }
