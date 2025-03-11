@@ -4,7 +4,7 @@ const blogsRouter = express.Router();
 const Blog = require('../models/blog');
 const User = require('../models/user');
 
-const { tokenExtractor, userExtractor } = require('../middleware/auth');
+const middleware = require('../utils/middleware');
 
 blogsRouter.get('/', async (request, response) => {
 	try {
@@ -15,7 +15,7 @@ blogsRouter.get('/', async (request, response) => {
 	}
 });
 
-blogsRouter.post('/', tokenExtractor, userExtractor, async (request, response) => {
+blogsRouter.post('/', middleware.userExtractor, async (request, response) => {
 	const { title, author, url, likes } = request.body
 
 	const user = await User.findOne();
