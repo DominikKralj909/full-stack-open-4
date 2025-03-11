@@ -1,31 +1,47 @@
 const express = require('express');
-const Blog = require('../models/blog');
-const router = express.Router();
+const blogsRouter = express.Router();
 
-router.get('/', async (request, response) => {
+const Blog = require('../models/blog');
+const User = require('../models/user');
+
+blogsRouter.get('/', async (request, response) => {
 	try {
-		const blogs = await Blog.find({});
+		const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 });
 		response.json(blogs);
 	} catch (error) {
 		response.status(500).json({ error: 'Something went wrong' });
 	}
 });
 
-router.post('/', async (request, response) => {
-	const body = request.body;
+blogsRouter.post('/', async (request, response) => {
+	const { title, author, url, likes } = request.body
 
-	if (!body.title || !body.url) {
+	const user = await User.findOne();
+
+	if (!user) {
+		return response.status(400).json({ error: 'No users found' });
+	}
+
+	if (!title || !url) {
 		return response.status(400).json({ error: 'Title and URL are required' });
 	}
 
-	if (!body.likes) body.likes = 0; 
+	const blog = new Blog({
+		title,
+		author,
+		url,
+		likes: likes || 0,
+		user: user._id,
+	});
 
-	const blog = new Blog(body);
-	const savedBlog = await blog.save();
+	const savedBlog = await blog.save()
+	user.blogs = user.blogs.concat(savedBlog._id)
+	await user.save()
+
 	response.status(201).json(savedBlog);
 });
 
-router.delete('/:id', async (request, response) => {
+blogsRouter.delete('/:id', async (request, response) => {
 	const { id } = request.params;
 
 	try {
@@ -43,7 +59,7 @@ router.delete('/:id', async (request, response) => {
 	}
 });
 
-router.put('/:id', async (request, response) => {
+blogsRouter.put('/:id', async (request, response) => {
 	const { id } = request.params;
 	const { likes } = request.body;
 
@@ -69,4 +85,4 @@ router.put('/:id', async (request, response) => {
 });
 
 
-module.exports = router
+module.exports = blogsRouter
