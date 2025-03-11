@@ -4,6 +4,8 @@ const blogsRouter = express.Router();
 const Blog = require('../models/blog');
 const User = require('../models/user');
 
+const { tokenExtractor, userExtractor } = require('../middleware/auth');
+
 blogsRouter.get('/', async (request, response) => {
 	try {
 		const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 });
@@ -13,7 +15,7 @@ blogsRouter.get('/', async (request, response) => {
 	}
 });
 
-blogsRouter.post('/', async (request, response) => {
+blogsRouter.post('/', tokenExtractor, userExtractor, async (request, response) => {
 	const { title, author, url, likes } = request.body
 
 	const user = await User.findOne();
